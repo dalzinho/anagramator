@@ -2,6 +2,7 @@ package uk.co.mrdaly.anagramator.service;
 
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,7 +13,9 @@ public class WordSorterService {
         List<String> collect = word.chars()
                 .sorted()
                 .mapToObj(i -> (char) i)
+                .filter(Character::isAlphabetic)
                 .map(String::valueOf)
+                .map(String::trim)
                 .collect(Collectors.toList());
 
         return String.join("", collect);

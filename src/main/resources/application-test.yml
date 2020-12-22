@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: ${anagramatordbhost}
+    username: ${anagramatordbusr}
+    password: ${anagramatordbpw}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create
