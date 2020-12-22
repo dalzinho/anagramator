@@ -8,7 +8,6 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import uk.co.mrdaly.anagramator.jpa.entity.SolverEntry;
 import uk.co.mrdaly.anagramator.jpa.repository.SolverEntryRepository;
-import uk.co.mrdaly.anagramator.source.InputSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,8 +20,6 @@ public class WikiReaderService {
 
     private final WordSorterService wordSorterService;
     private final SolverEntryRepository solverEntryRepository;
-
-    public static final String WIKIBASE = "https://en.wikipedia.org";
 
     public WikiReaderService(WordSorterService wordSorterService, SolverEntryRepository solverEntryRepository) {
         this.wordSorterService = wordSorterService;
@@ -42,7 +39,7 @@ public class WikiReaderService {
 
             if (href.isEmpty()) continue;
 
-            final Document articleListDocument = Jsoup.connect(WIKIBASE + href).get();
+            final Document articleListDocument = Jsoup.connect(WIKIPEDIA.getUriBase() + href).get();
             final Element articleList = articleListDocument.getElementsByClass("mw-allpages-chunk").get(0);
             final Elements listItems = articleList.getElementsByTag("li");
 

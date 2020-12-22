@@ -16,7 +16,6 @@ import java.util.List;
 @Component
 public class WordListIngestionService {
 
-    public static final String WIKTIONARY_BASE = "https://en.wiktionary.org/wiki/";
 
     private final WordSorterService wordSorterService;
     private final SolverEntryRepository solverEntryRepository;

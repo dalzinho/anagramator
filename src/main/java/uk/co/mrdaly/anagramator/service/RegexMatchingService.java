@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 public class RegexMatchingService {
 
     public boolean apply(String pattern, String input) {
-        final String questionMarksReplaced = pattern.replaceAll("\\?", "[a-z]");
+        final String questionMarksReplaced = pattern.replace("?", "[a-z]");
         return input.matches(questionMarksReplaced);
     }
 }

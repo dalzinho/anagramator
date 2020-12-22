@@ -4,12 +4,9 @@ import org.springframework.stereotype.Service;
 import uk.co.mrdaly.anagramator.jpa.entity.SolverEntry;
 import uk.co.mrdaly.anagramator.jpa.repository.SolverEntryRepository;
 import uk.co.mrdaly.anagramator.model.SolutionReponse;
-import uk.co.mrdaly.anagramator.source.InputSource;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static uk.co.mrdaly.anagramator.service.WikiReaderService.WIKIBASE;
 
 @Service
 public class LookupService {
