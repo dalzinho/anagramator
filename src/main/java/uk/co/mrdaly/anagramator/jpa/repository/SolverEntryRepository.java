@@ -8,4 +8,6 @@ import java.util.List;
 public interface SolverEntryRepository extends JpaRepository<SolverEntry, Long> {
 
     List<SolverEntry> findSolverEntryBySortedTextStartsWith(String startsWith);
+
+    List<SolverEntry> findAllByTrimmedTextLike(String like);
 }

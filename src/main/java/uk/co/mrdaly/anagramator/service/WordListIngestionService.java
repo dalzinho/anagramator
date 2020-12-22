@@ -31,14 +31,13 @@ public class WordListIngestionService {
 
         List<SolverEntry> solverEntries = new ArrayList<>();
 
-        int i = 0;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             for (String line; (line = br.readLine()) != null; ) {
-                if (i == 1000) {
+                if (solverEntries.size() == 1_000) {
                     solverEntryRepository.saveAll(solverEntries);
                     solverEntries = new ArrayList<>();
-
                 }
+
                 String sorted = wordSorterService.sortLetters(line);
 
                 SolverEntry solverEntry = new SolverEntry();
@@ -47,8 +46,6 @@ public class WordListIngestionService {
                 solverEntry.setUri(InputSource.WORDLIST.getUriBase() + line);
                 solverEntry.setInputSource(InputSource.WORDLIST);
                 solverEntries.add(solverEntry);
-
-                i++;
             }
         }
         solverEntryRepository.saveAll(solverEntries);

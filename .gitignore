@@ -32,4 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
+### webapp ###
+node_modules
+
+### my own junk ###
 local.properties

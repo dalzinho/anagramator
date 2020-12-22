@@ -22,22 +22,31 @@ public class LookupService {
     }
 
     public List<SolutionReponse> getAnagrams(String word) {
-        return getAnagrams(word, word);
-    }
-
-    public List<SolutionReponse> getAnagrams(String word, String pattern) {
-        String sorted = wordSorterService.sortLetters(word);
+        String sorted = wordSorterService.sortLetters(word).toLowerCase();
 
         return solverEntryRepository.findSolverEntryBySortedTextStartsWith(sorted)
                 .stream()
-                .filter(solverEntry -> regexMatchingService.apply(solverEntry.getTrimmedText(), pattern))
                 .map(this::mapResponse)
                 .collect(Collectors.toList());
     }
 
+    public List<SolutionReponse> getAnagrams(String word, String pattern) {
+        String sorted = wordSorterService.sortLetters(word).toLowerCase();
+
+        return solverEntryRepository.findSolverEntryBySortedTextStartsWith(sorted)
+                .stream()
+                .filter(solverEntry -> regexMatchingService.apply(pattern, solverEntry.getTrimmedText()))
+                .map(this::mapResponse)
+                .collect(Collectors.toList());
+
+    }
+
     public List<SolutionReponse> getMatching(String pattern) {
-        return solverEntryRepository.findAll().stream()
-                .filter(solverEntry -> regexMatchingService.apply(solverEntry.getTrimmedText(), pattern))
+        String sqlLikePattern = regexMatchingService.prepareSqlLike(pattern.toLowerCase());
+
+        return solverEntryRepository.findAllByTrimmedTextLike(sqlLikePattern)
+                .stream()
+                .filter(solverEntry -> regexMatchingService.apply(pattern, solverEntry.getTrimmedText()))
                 .map(this::mapResponse)
                 .collect(Collectors.toList());
     }
