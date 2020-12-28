@@ -14,10 +14,10 @@ public class SolverEntry {
     private long id;
 
     private String uri;
-    private String sortedText;
     private String trimmedText;
     private String text;
     private String pageGrouping;
+    private long primeProduct;
 
     @Enumerated(EnumType.STRING)
     private InputSource inputSource;

@@ -1,5 +1,6 @@
-import React from 'react';
-import {Form, ListGroup, ListGroupItem} from "react-bootstrap";
+import React, {useEffect} from 'react';
+import {Form} from "react-bootstrap";
+import {ResultsComponent} from "./ResultsComponent";
 
 export const MainContainer = () => {
 
@@ -11,13 +12,16 @@ export const MainContainer = () => {
         const PATH_BASE = "/solve";
 
         let path;
-        if (anagram) {
+        if ((!anagram || anagram.length < 3) && (!pattern || pattern.length < 3)) {
+            setMatches([]);
+            return;
+        } else if (anagram) {
             path = `${PATH_BASE}/anagram/${anagram}`;
             if (pattern) {
                 path += `?pattern=${pattern}`;
             }
         } else if (pattern) {
-            path =`${PATH_BASE}/pattern/${pattern}`;
+            path = `${PATH_BASE}/pattern/${pattern}`;
         }
 
         let response = await fetch(path);
@@ -25,8 +29,17 @@ export const MainContainer = () => {
         if (response.ok) {
             let json = await response.json();
             setMatches(json);
+        } else {
+            setMatches([])
         }
     };
+
+    useEffect(() => {
+        triggerLookup()
+    }, [pattern]);
+    useEffect(() => {
+        triggerLookup()
+    }, [anagram]);
 
     return <div>
         <Form>
@@ -55,16 +68,13 @@ export const MainContainer = () => {
                         triggerLookup();
                     }}
                 />
-                <Form.Text className="text-muted">Enter the pattern, using * as a wildcard, e.g. CR*S*W*RD. Case is
-                    immaterial</Form.Text>
+                <Form.Text className="text-muted">Enter the letters you want to unscramble.</Form.Text>
             </Form.Group>
         </Form>
 
-        <div>
-            <ListGroup>
-                {matches && matches.forEach(match => {return <ListGroupItem>{match.text}</ListGroupItem>})}
-            </ListGroup>
-        </div>
+
+        <ResultsComponent matches={matches} />
+
 
     </div>
 };

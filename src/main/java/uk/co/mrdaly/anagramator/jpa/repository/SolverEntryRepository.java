@@ -7,7 +7,11 @@ import java.util.List;
 
 public interface SolverEntryRepository extends JpaRepository<SolverEntry, Long> {
 
-    List<SolverEntry> findSolverEntryBySortedTextStartsWith(String startsWith);
+    List<SolverEntry> findAllByTrimmedTextLikeOrderByText(String like);
 
-    List<SolverEntry> findAllByTrimmedTextLike(String like);
+    List<SolverEntry> findAllByPrimeProductEquals(long primeSum);
+
+    List<SolverEntry> findAllByPrimeProductIn(List<Long> primeSums);
+
+    List<SolverEntry> findAllByPrimeProductGreaterThanEqual(long primeProduct);
 }

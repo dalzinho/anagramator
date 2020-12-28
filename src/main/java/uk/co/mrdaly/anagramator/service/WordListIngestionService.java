@@ -2,6 +2,7 @@ package uk.co.mrdaly.anagramator.service;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import uk.co.mrdaly.anagramator.dataloader.DataLoader;
 import uk.co.mrdaly.anagramator.jpa.entity.SolverEntry;
 import uk.co.mrdaly.anagramator.jpa.repository.SolverEntryRepository;
 import uk.co.mrdaly.anagramator.source.InputSource;
@@ -14,15 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class WordListIngestionService {
+public class WordListIngestionService extends DataLoader {
 
-
-    private final WordSorterService wordSorterService;
-    private final SolverEntryRepository solverEntryRepository;
-
-    public WordListIngestionService(WordSorterService wordSorterService, SolverEntryRepository solverEntryRepository) {
-        this.wordSorterService = wordSorterService;
-        this.solverEntryRepository = solverEntryRepository;
+    public WordListIngestionService(WordSorterService wordSorterService, SolverEntryRepository solverEntryRepository, PrimeService primeService) {
+        super(wordSorterService, solverEntryRepository, primeService);
     }
 
     public void ingestFromClasspath(String filename) throws IOException {
@@ -33,21 +29,28 @@ public class WordListIngestionService {
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             for (String line; (line = br.readLine()) != null; ) {
-                if (solverEntries.size() == 1_000) {
+                if (solverEntries.size() == 10_000) {
                     solverEntryRepository.saveAll(solverEntries);
                     solverEntries = new ArrayList<>();
                 }
 
-                String sorted = wordSorterService.sortLetters(line);
-
-                SolverEntry solverEntry = new SolverEntry();
-                solverEntry.setText(line);
-                solverEntry.setSortedText(sorted);
-                solverEntry.setUri(InputSource.WORDLIST.getUriBase() + line);
-                solverEntry.setInputSource(InputSource.WORDLIST);
+                final SolverEntry solverEntry = buildEntry(line);
                 solverEntries.add(solverEntry);
             }
         }
         solverEntryRepository.saveAll(solverEntries);
+    }
+
+    @Override
+    protected SolverEntry buildEntry(String word) {
+
+        SolverEntry solverEntry = new SolverEntry();
+        solverEntry.setText(word);
+        solverEntry.setTrimmedText(preprocessLookupFields(word));
+        solverEntry.setUri(InputSource.WORDLIST.getUriBase() + word);
+        solverEntry.setInputSource(InputSource.WORDLIST);
+        solverEntry.setPrimeProduct(primeService.calculatePrimeSumForWord(solverEntry.getTrimmedText()));
+
+        return solverEntry;
     }
 }

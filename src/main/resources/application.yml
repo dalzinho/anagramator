@@ -1,0 +1,8 @@
+spring:
+  cache:
+    jcache:
+      config: classpath:ehcache.xml
+
+anagramator:
+  response:
+    max-words: 5

@@ -18,11 +18,10 @@ import static uk.co.mrdaly.anagramator.source.InputSource.WIKIPEDIA;
 @Service
 public class WikiReaderService {
 
-    private final WordSorterService wordSorterService;
     private final SolverEntryRepository solverEntryRepository;
 
-    public WikiReaderService(WordSorterService wordSorterService, SolverEntryRepository solverEntryRepository) {
-        this.wordSorterService = wordSorterService;
+    // todo wire up the normalisation service
+    public WikiReaderService(SolverEntryRepository solverEntryRepository) {
         this.solverEntryRepository = solverEntryRepository;
     }
 
@@ -48,12 +47,11 @@ public class WikiReaderService {
                         SolverEntry solverEntry = new SolverEntry();
                         solverEntry.setPageGrouping(element.text());
 
-                        String sorted = wordSorterService.sortLetters(preprocessLookupFields(li.text()));
-
-                        solverEntry.setSortedText(sorted);
                         solverEntry.setTrimmedText(preprocessLookupFields(element.text()));
                         solverEntry.setText(li.text());
                         solverEntry.setInputSource(WIKIPEDIA);
+
+                        // todo get the prime sum and write it to the results
 
                         final String uri = li.getElementsByTag("a").get(0).attr("href");
                         solverEntry.setUri(WIKIPEDIA.getUriBase() + uri);
@@ -76,7 +74,6 @@ public class WikiReaderService {
                         .collect(Collectors.toList());
 
         return String.join("", letters);
-
     }
 }
 
