@@ -1,18 +1,16 @@
 package uk.co.mrdaly.anagramator.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import uk.co.mrdaly.anagramator.exception.AnagramatorException;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
 public class PrimeService {
-
-    @Value("${anagramator.response.max-words:5}")
-    private int maxWords;
 
     private static final Map<Character, Integer> PRIMES_MAP;
     private static final Set<Integer> PRIMES;
@@ -23,7 +21,7 @@ public class PrimeService {
 
         PRIMES = new HashSet<>(Collections.singletonList(2));
 
-        for (int i = 1; i < 26; i++) {
+        for (int i = 1; i < 1000; i++) {
             int nextPrime = PRIMES.stream().max(Integer::compare).get() + 1;
             while (!isPrime(nextPrime)) {
                 nextPrime++;
@@ -39,9 +37,13 @@ public class PrimeService {
         return PRIMES.stream().noneMatch(prime -> i % prime == 0);
     }
 
-    public long calculatePrimeSumForWord(String word) {
+    public BigInteger calculatePrimeSumForWord(String word) throws AnagramatorException {
+            return mapWordLettersToPrimes(word)
+                    .stream()
+                    .map(BigInteger::valueOf)
+                    .reduce(BigInteger::multiply)
+                    .orElseThrow(() -> new AnagramatorException("can't calculate a prime sum for " + word));
 
-        return mapWordLettersToPrimes(word).stream().mapToLong(Long::valueOf).reduce((a, b) -> a * b).getAsLong();
     }
 
     @Cacheable("combinations")
@@ -95,7 +97,7 @@ public class PrimeService {
 
     public List<Integer> mapWordLettersToPrimes(String word) {
         return word.chars()
-                .map(c -> PRIMES_MAP.get((char) c))
+                .map(c -> PRIMES_MAP.getOrDefault((char) c, 1)) /* todo the default here is sketchy */
                 .boxed()
                 .collect(Collectors.toList());
     }

@@ -6,3 +6,6 @@ spring:
 anagramator:
   response:
     max-words: 5
+
+server:
+  port: 8080

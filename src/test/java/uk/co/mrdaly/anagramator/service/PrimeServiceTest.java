@@ -3,7 +3,9 @@ package uk.co.mrdaly.anagramator.service;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.co.mrdaly.anagramator.exception.AnagramatorException;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -21,10 +23,10 @@ public class PrimeServiceTest {
     }
 
     @Test
-    public void calculatePrimeSumForWord() {
+    public void calculatePrimeSumForWord() throws AnagramatorException {
 
-        final long actual = primeService.calculatePrimeSumForWord(TEST_WORD);
-        assertEquals(2 * 3 * 5 * 7, actual);
+        final BigInteger actual = primeService.calculatePrimeSumForWord(TEST_WORD);
+        assertEquals(BigInteger.valueOf(2 * 3 * 5 * 7), actual);
     }
 
     @Test

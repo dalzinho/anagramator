@@ -16,12 +16,8 @@ public class DataAccessService {
         this.solverEntryRepository = solverEntryRepository;
     }
 
-    @Cacheable("wordsByPrimeSum")
-    public List<SolverEntry> findWordsByPrimeSum(int primeKey) {
-        return solverEntryRepository.findAllByPrimeProductEquals(primeKey);
-    }
 
-    @Cacheable("wordsByPrimeSumIn")
+    @Cacheable(value = "wordsByPrimeSumIn", key = "#primeProducts")
     public List<SolverEntry> findWordsByPrimeProductIn(List<Long> primeProducts) {
         return solverEntryRepository.findAllByPrimeProductIn(primeProducts);
     }

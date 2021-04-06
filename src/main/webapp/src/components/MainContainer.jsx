@@ -2,24 +2,43 @@ import React, {useEffect} from 'react';
 import {Form} from "react-bootstrap";
 import {ResultsComponent} from "./ResultsComponent";
 
+const PATH_BASE = "/solve";
+
 export const MainContainer = () => {
 
     const [pattern, setPattern] = React.useState("");
     const [anagram, setAnagram] = React.useState("");
     const [matches, setMatches] = React.useState([]);
+    const [partial, setPartial] = React.useState(false);
+
+    const buildAnagramPath = () => {
+        let path = `${PATH_BASE}/anagram/${anagram}`;
+
+        const params = {pattern: pattern, partial: partial};
+
+        if (pattern || partial) {
+            path += "?";
+            const mappedParams = Object.keys(params)
+                .filter(param => params[param])
+                .map(param => param + "=" + params[param]);
+            const paramsString = mappedParams.join("&");
+            path += paramsString;
+        }
+
+        return path;
+    };
 
     const triggerLookup = async () => {
-        const PATH_BASE = "/solve";
+        setMatches([]);
 
         let path;
+
+
         if ((!anagram || anagram.length < 3) && (!pattern || pattern.length < 3)) {
             setMatches([]);
             return;
         } else if (anagram) {
-            path = `${PATH_BASE}/anagram/${anagram}`;
-            if (pattern) {
-                path += `?pattern=${pattern}`;
-            }
+            path = buildAnagramPath();
         } else if (pattern) {
             path = `${PATH_BASE}/pattern/${pattern}`;
         }
@@ -69,6 +88,14 @@ export const MainContainer = () => {
                     }}
                 />
                 <Form.Text className="text-muted">Enter the letters you want to unscramble.</Form.Text>
+            </Form.Group>
+            <Form.Group controlId={"partialToggle"}>
+                <Form.Check
+                    type="checkbox"
+                    label="return partial matches"
+                    value={partial}
+                    onClick={() => setPartial(!partial)}
+                />
             </Form.Group>
         </Form>
 

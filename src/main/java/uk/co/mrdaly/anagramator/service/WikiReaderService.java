@@ -1,77 +1,125 @@
 package uk.co.mrdaly.anagramator.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import uk.co.mrdaly.anagramator.exception.AnagramatorException;
 import uk.co.mrdaly.anagramator.jpa.entity.SolverEntry;
 import uk.co.mrdaly.anagramator.jpa.repository.SolverEntryRepository;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static uk.co.mrdaly.anagramator.source.InputSource.WIKIPEDIA;
 
 @Service
+@Slf4j
 public class WikiReaderService {
 
     private final SolverEntryRepository solverEntryRepository;
+    private final PrimeService primeService;
 
     // todo wire up the normalisation service
-    public WikiReaderService(SolverEntryRepository solverEntryRepository) {
+    public WikiReaderService(SolverEntryRepository solverEntryRepository, PrimeService primeService) {
         this.solverEntryRepository = solverEntryRepository;
+        this.primeService = primeService;
     }
 
+    @Transactional
     public void updatePageSources() throws IOException {
-        final Connection connect = Jsoup.connect("https://en.wikipedia.org/wiki/Wikipedia:Contents/A–Z_index");
-        final Document document = connect.get();
+        String allArticlesUri = "https://en.wikipedia.org/wiki/Wikipedia:Vital_articles/List_of_all_articles";
+        final Connection connection = Jsoup.connect(allArticlesUri).maxBodySize(0)
+                .timeout(600000);
+        final Document document = connection.get();
+        final Elements links = document.getElementsByTag("a");
 
-        final Element toc = document.getElementById("toc");
+        final List<SolverEntry> pages = links.parallelStream()
+                .map(this::processWikipediaSolverInput)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
 
-        final Elements elementsMatchingText = toc.getElementsMatchingText("[A-Za-z]{2}");
+        solverEntryRepository.saveAll(pages);
+    }
 
-        for (Element element : elementsMatchingText) {
-            final String href = element.attr("href");
+    private boolean startsWithANumber(String text) {
+        Pattern pattern = Pattern.compile("[0-9].*");
+        return pattern.matcher(text).matches();
+    }
 
-            if (href.isEmpty()) continue;
+    private List<SolverEntry> processWikipediaSolverInput(Element wikipediaLink) {
+        List<SolverEntry> solverEntries = new ArrayList<>();
 
-            final Document articleListDocument = Jsoup.connect(WIKIPEDIA.getUriBase() + href).get();
-            final Element articleList = articleListDocument.getElementsByClass("mw-allpages-chunk").get(0);
-            final Elements listItems = articleList.getElementsByTag("li");
+        String title = wikipediaLink.attr("title");
 
-            final List<SolverEntry> groupedPages = listItems.stream()
-                    .map(li -> {
-                        SolverEntry solverEntry = new SolverEntry();
-                        solverEntry.setPageGrouping(element.text());
-
-                        solverEntry.setTrimmedText(preprocessLookupFields(element.text()));
-                        solverEntry.setText(li.text());
-                        solverEntry.setInputSource(WIKIPEDIA);
-
-                        // todo get the prime sum and write it to the results
-
-                        final String uri = li.getElementsByTag("a").get(0).attr("href");
-                        solverEntry.setUri(WIKIPEDIA.getUriBase() + uri);
-
-                        return solverEntry;
-                    })
-                    .collect(Collectors.toList());
-
-            solverEntryRepository.saveAll(groupedPages);
+        if (startsWithANumber(title) || title.isEmpty()) {
+            log.error("Rejected: {}", title);
+            return Collections.emptyList();
         }
+
+        String urlComponent = wikipediaLink.attr("href");
+
+        try {
+            SolverEntry solverEntry = buildStubSolverEntryFrom(title, urlComponent);
+            String lookupValue = preprocessLookupFields(title);
+
+            if (lookupValue.isEmpty()) {
+                System.out.println("hello");
+            }
+            solverEntry.setTrimmedText(lookupValue);
+            solverEntry.setPrimeProduct(primeService.calculatePrimeSumForWord(lookupValue));
+
+            solverEntries.add(solverEntry);
+
+            final Matcher matcher = checkForApparentClosingDisambiguation(title);
+
+            if (matcher.matches()) {
+                SolverEntry secondEntry = buildStubSolverEntryFrom(title, urlComponent);
+                String lookup = preprocessLookupFields(matcher.group());
+
+                secondEntry.setTrimmedText(lookup);
+                solverEntry.setPrimeProduct(primeService.calculatePrimeSumForWord(lookup));
+            }
+        } catch (AnagramatorException e) {
+            log.error("something of a disaster when trying to process {}, {}", title, urlComponent, e);
+        }
+
+        return solverEntries;
+    }
+
+    private SolverEntry buildStubSolverEntryFrom(String title, String urlComponent) {
+        SolverEntry solverEntry = new SolverEntry();
+        solverEntry.setInputSource(WIKIPEDIA);
+        solverEntry.setPageGrouping(title);
+        solverEntry.setUri(WIKIPEDIA.getUriBase() + urlComponent);
+        solverEntry.setText(title);
+        return solverEntry;
+    }
+
+    private Matcher checkForApparentClosingDisambiguation(String title) {
+        final Pattern bracketedClosingDisambiguationPattern = Pattern.compile("(.*)\\(.*\\)");
+        return bracketedClosingDisambiguationPattern.matcher(title);
     }
 
     private String preprocessLookupFields(String s) {
         List<String> letters = s.chars()
-                        .mapToObj(i -> (char) i)
-                        .filter(Character::isAlphabetic)
-                        .map(String::valueOf)
-                        .map(String::toLowerCase)
-                        .map(String::trim)
-                        .collect(Collectors.toList());
+                .mapToObj(i -> (char) i)
+                .filter(Character::isAlphabetic)
+                .map(String::valueOf)
+                .map(String::toLowerCase)
+                .map(String::trim)
+                .map(StringUtils::stripAccents)
+                .collect(Collectors.toList());
 
         return String.join("", letters);
     }

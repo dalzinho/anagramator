@@ -4,12 +4,13 @@ import lombok.Data;
 import uk.co.mrdaly.anagramator.source.InputSource;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 
 @Entity
 @Data
 public class SolverEntry {
 
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private long id;
 
@@ -17,7 +18,9 @@ public class SolverEntry {
     private String trimmedText;
     private String text;
     private String pageGrouping;
-    private long primeProduct;
+
+    @Column(precision = 100, scale = 0)
+    private BigInteger primeProduct;
 
     @Enumerated(EnumType.STRING)
     private InputSource inputSource;

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.co.mrdaly.anagramator.model.SolutionReponse;
 import uk.co.mrdaly.anagramator.service.LookupService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -19,15 +20,26 @@ public class Controller {
     }
 
     @GetMapping("/solve/anagram/{word}")
-    public List<SolutionReponse> getAnagramsForWord(@PathVariable String word, @RequestParam(required = false) String pattern) {
-        // todo wire this up to use the pattern if provided
-            return lookupService.slightlySmarterAnagram(word);
-
+    public List<SolutionReponse> getAnagramsForWord(@PathVariable String word,
+                                                    @RequestParam(defaultValue = "") String pattern,
+                                                    @RequestParam(defaultValue = "false") boolean partial
+    ) {
+        List<SolutionReponse> response = new ArrayList<>();
+        if (partial) {
+            response = lookupService.anagramWithPartialMatches(word);
+        } else {
+            if (pattern.isEmpty()) {
+                response = lookupService.getAnagrams(word);
+            } else {
+                response = lookupService.getAnagrams(word, pattern);
+            }
+        }
+        return response;
     }
 
     @GetMapping("/solve/pattern/{pattern}")
     public List<SolutionReponse> getWordsFromPattern(@PathVariable String pattern) {
-        return lookupService.getMatching(pattern);
+        return lookupService.matchPattern(pattern);
     }
 
 

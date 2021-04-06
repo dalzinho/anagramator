@@ -1,8 +1,10 @@
 package uk.co.mrdaly.anagramator.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import uk.co.mrdaly.anagramator.dataloader.DataLoader;
+import uk.co.mrdaly.anagramator.exception.AnagramatorException;
 import uk.co.mrdaly.anagramator.jpa.entity.SolverEntry;
 import uk.co.mrdaly.anagramator.jpa.repository.SolverEntryRepository;
 import uk.co.mrdaly.anagramator.source.InputSource;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class WordListIngestionService extends DataLoader {
 
     public WordListIngestionService(WordSorterService wordSorterService, SolverEntryRepository solverEntryRepository, PrimeService primeService) {
@@ -44,13 +47,17 @@ public class WordListIngestionService extends DataLoader {
     @Override
     protected SolverEntry buildEntry(String word) {
 
-        SolverEntry solverEntry = new SolverEntry();
-        solverEntry.setText(word);
-        solverEntry.setTrimmedText(preprocessLookupFields(word));
-        solverEntry.setUri(InputSource.WORDLIST.getUriBase() + word);
-        solverEntry.setInputSource(InputSource.WORDLIST);
-        solverEntry.setPrimeProduct(primeService.calculatePrimeSumForWord(solverEntry.getTrimmedText()));
+        try {
+            SolverEntry solverEntry = new SolverEntry();
+            solverEntry.setText(word);
+            solverEntry.setTrimmedText(preprocessLookupFields(word));
+            solverEntry.setUri(InputSource.WORDLIST.getUriBase() + word);
+            solverEntry.setInputSource(InputSource.WORDLIST);
+            solverEntry.setPrimeProduct(primeService.calculatePrimeSumForWord(solverEntry.getTrimmedText()));
 
-        return solverEntry;
+        } catch (AnagramatorException e) {
+            log.error("oh no", e);
+        }
+        return null;
     }
 }
